@@ -1,0 +1,5 @@
+port = 8000
+
+[[routes]]
+location = "/"
+source = "/home/tek/src/rust-http-server/index.html"
