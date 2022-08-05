@@ -2,6 +2,7 @@ use serde::Deserialize;
 use std::env;
 use std::fs::File;
 use std::io::Read;
+use std::process::exit;
 use toml;
 
 #[derive(Debug, Deserialize, Clone)]
@@ -19,7 +20,13 @@ pub fn read_route_config(path: &str) -> Config {
     let mut f = File::open(path).unwrap();
     let mut buffer = String::new();
 
-    f.read_to_string(&mut buffer).unwrap();
+    match f.read_to_string(&mut buffer) {
+        Ok(_v) => println!("Successfully Read config file."),
+        Err(e) => {
+            eprintln!("Error Reading config file {e:#?}");
+            exit(1);
+        }
+    };
 
     let mut config: Config = toml::from_str(&buffer).unwrap();
 
@@ -32,17 +39,15 @@ pub fn read_route_config(path: &str) -> Config {
 pub fn get_port(config: &Config) -> Option<u32> {
     match config.port {
         Some(port) => {
-            println!("Running on Port {port}");
             Some(port)
         }
         None => match env::var("PORT") {
             Ok(port) => {
-                println!("Running on Port {port}");
                 Some(port.parse::<u32>().unwrap())
             }
             Err(_) => {
-                println!("No Port Configured");
-                println!("Please set PORT or configure ports in the configuration file");
+                eprintln!("No Port Configured");
+                eprintln!("Please set PORT or configure ports in the configuration file");
                 None
             }
         },

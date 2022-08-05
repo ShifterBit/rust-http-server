@@ -2,37 +2,58 @@ mod config;
 mod request;
 mod response;
 
+use clap::Parser;
+
 use config::read_route_config;
 use config::{get_port, Config};
 use request::{handle_request, parse_request};
 
-use std::env;
-use std::ffi::OsString;
 use std::fs::File;
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
+use std::path::PathBuf;
 use std::process::exit;
 
+#[derive(Parser, Debug)]
+#[clap(version)]
+struct Args {
+    #[clap(short, long, value_parser)]
+    port: Option<u32>,
+    #[clap(short, long, value_parser)]
+    config: PathBuf,
+}
+
 fn main() {
-    let args: Vec<String> = env::args_os()
-        .collect::<Vec<OsString>>()
-        .iter()
-        .map(|s| s.clone().into_string().unwrap())
-        .collect();
+    let args = Args::parse();
 
-    let config = read_route_config(&args[0]);
+    let config = read_route_config(args.config.to_str().unwrap());
 
-    let port: u32 = match get_port(&config) {
+    let port: u32 = match args.port {
         Some(port) => port,
-        None => exit(1),
+        None => match get_port(&config) {
+            Some(port) => port,
+            None => exit(1),
+        },
     };
 
     start_server(port, config)
 }
 
 fn start_server(port: u32, config: Config) {
-    let listener = TcpListener::bind(format!("127.0.0.1:{}", port)).unwrap();
-    println!("{:?}", listener);
+    let listener = match TcpListener::bind(format!("127.0.0.1:{}", port)) {
+        Ok(l) => {
+            let port = l.local_addr().unwrap().port();
+            let address = l.local_addr().unwrap().ip();
+            println!("Serving HTTP on {address} port {port} (http://{address}:{port}/)");
+            l
+        }
+        Err(e) => {
+            eprintln!("Unable to open port {port}");
+            eprintln!("Error: {:?}", e.kind());
+
+            exit(1);
+        }
+    };
     for stream in listener.incoming() {
         handle_connection(stream.unwrap(), config.to_owned())
     }

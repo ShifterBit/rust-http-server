@@ -18,7 +18,11 @@ pub struct HTTPResponse<'a> {
 }
 
 impl HTTPResponse<'_> {
-    pub fn new<'a>(code: HTTPResponseCode, content_type: &'a str, body: &'a str) -> HTTPResponse<'a> {
+    pub fn new<'a>(
+        code: HTTPResponseCode,
+        content_type: &'a str,
+        body: &'a str,
+    ) -> HTTPResponse<'a> {
         HTTPResponse {
             code,
             content_type,
@@ -34,11 +38,7 @@ impl ToString for HTTPResponse<'_> {
         let header_end = "\r\n\r\n";
         let body = self.body;
 
-        format!(
-            "{base}\n
-                {content_type}\n
-                {header_end}
-                {body}"
+        format!("{base}\n{content_type}\n{header_end}{body}"
         )
     }
 }
