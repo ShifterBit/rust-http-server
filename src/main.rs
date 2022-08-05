@@ -11,7 +11,7 @@ use request::{handle_request, parse_request};
 use std::fs::File;
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::exit;
 
 #[derive(Parser, Debug)]
@@ -62,8 +62,17 @@ fn read_page_source(path: &str) -> String {
     let mut f = File::open(path).unwrap();
     let mut buffer = String::new();
 
-    f.read_to_string(&mut buffer).unwrap();
+    if Path::new(path).is_dir() {
+        return read_page_source(&format!("{path}/index.html"));
+    }
 
+    match f.read_to_string(&mut buffer) {
+        Ok(_f) => {}
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::NotFound => eprintln!("Error: {path} No such File or Directory"),
+            k => println!("Error: {k:#?}\n Kind: {:#?}", e.kind()),
+        },
+    };
     buffer
 }
 
