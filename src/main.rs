@@ -1,6 +1,7 @@
 mod config;
 mod request;
 mod response;
+mod mimetypes;
 
 use clap::Parser;
 
@@ -50,7 +51,6 @@ fn start_server(port: u32, config: Config) {
         Err(e) => {
             eprintln!("Unable to open port {port}");
             eprintln!("Error: {:?}", e.kind());
-
             exit(1);
         }
     };
@@ -58,19 +58,21 @@ fn start_server(port: u32, config: Config) {
         handle_connection(stream.unwrap(), config.to_owned())
     }
 }
-fn read_page_source(path: &str) -> String {
+fn read_page_source(path: &str) -> Vec<u8> {
     let mut f = File::open(path).unwrap();
-    let mut buffer = String::new();
+    let mut buffer = Vec::new();
+
+
 
     if Path::new(path).is_dir() {
         return read_page_source(&format!("{path}/index.html"));
     }
 
-    match f.read_to_string(&mut buffer) {
+    match f.read_to_end(&mut buffer) {
         Ok(_f) => {}
         Err(e) => match e.kind() {
             std::io::ErrorKind::NotFound => eprintln!("Error: {path} No such File or Directory"),
-            k => println!("Error: {k:#?}\n Kind: {:#?}", e.kind()),
+            k => eprintln!("Error: {k:#?}\n Kind: {:#?}", e.kind()),
         },
     };
     buffer

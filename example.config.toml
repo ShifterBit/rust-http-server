@@ -2,9 +2,12 @@ port = 8000
 
 [[routes]]
 location = "/"
-source = "~/index.html"
+source = "/home/user/website/index.html"
 
 [[routes]]
-location = "/directory"
-source = "~/website"
+location = "/home"
+source = "/home/user/website"
 
+[[routes]]
+location = "/image"
+source = "/home/user/website/image.jpg"

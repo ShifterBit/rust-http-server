@@ -1,3 +1,5 @@
+use crate::mimetypes::HTTPContentType;
+
 pub enum HTTPResponseCode {
     OK,
     NotFound,
@@ -11,34 +13,36 @@ impl HTTPResponseCode {
     }
 }
 
-pub struct HTTPResponse<'a> {
+pub struct HTTPResponse {
     code: HTTPResponseCode,
-    content_type: &'a str,
-    body: &'a str,
+    content_type: HTTPContentType,
+    content_length: usize,
+    pub body: Vec<u8>,
 }
 
-impl HTTPResponse<'_> {
+impl HTTPResponse {
     pub fn new<'a>(
         code: HTTPResponseCode,
-        content_type: &'a str,
-        body: &'a str,
-    ) -> HTTPResponse<'a> {
+        content_type: HTTPContentType,
+        body: Vec<u8>,
+    ) -> HTTPResponse {
         HTTPResponse {
             code,
             content_type,
+            content_length: body.len(),
             body,
         }
     }
-}
-
-impl ToString for HTTPResponse<'_> {
-    fn to_string(&self) -> String {
-        let base = format!("HTTP/1.1 {}", self.code.to_string());
-        let content_type = format!("Content-Type: {}", self.content_type);
+    pub fn headers(&self) -> Vec<String> {
+        let base = format!("HTTP/1.1 {}\n", self.code.to_string());
+        let content_type = format!("Content-Type: {}\n", self.content_type.to_string());
+        let content_length = format!("Content-Length: {}", self.content_length);
         let header_end = "\r\n\r\n";
-        let body = self.body;
-
-        format!("{base}\n{content_type}\n{header_end}{body}"
-        )
+        vec![
+            base.to_owned(),
+            content_type.to_owned(),
+            content_length.to_owned(),
+            header_end.to_owned(),
+        ]
     }
 }

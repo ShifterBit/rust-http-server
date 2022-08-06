@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::net::TcpStream;
 
+use crate::mimetypes::infer_mimetype;
 use crate::response::{HTTPResponse, HTTPResponseCode};
 use crate::{config::Config, read_page_source};
 
@@ -32,20 +33,23 @@ pub fn handle_request(stream: &mut TcpStream, request: HTTPRequest, config: Conf
     {
         Some(route) => {
             let response_body = read_page_source(&route.source);
-            let response =
-                HTTPResponse::new(HTTPResponseCode::OK, "text/html", &response_body)
-                    .to_string();
-            stream.write(response.as_bytes()).unwrap();
+            let response = HTTPResponse::new(
+                HTTPResponseCode::OK,
+                infer_mimetype(&route.source),
+                response_body,
+            );
+            let mut res: Vec<u8> = response.headers().clone().concat().as_bytes().to_vec();
+            res.extend(response.body);
+
+            stream.write(&res).unwrap();
             stream.flush().unwrap();
         }
         None => {
-            let response = HTTPResponse::new(
-                HTTPResponseCode::NotFound,
-                "text/plain",
-                "",
-            )
-            .to_string();
-            stream.write(response.as_bytes()).unwrap();
+            let response =
+                HTTPResponse::new(HTTPResponseCode::NotFound, infer_mimetype(""), Vec::new());
+            stream
+                .write(response.headers().concat().as_bytes())
+                .unwrap();
             stream.flush().unwrap();
         }
     };
