@@ -4,11 +4,12 @@ pub enum HTTPResponseCode {
     OK,
     NotFound,
 }
-impl HTTPResponseCode {
-    fn to_string(&self) -> &str {
+
+impl ToString for HTTPResponseCode {
+    fn to_string(&self) -> String {
         match self {
-            HTTPResponseCode::OK => "200 OK",
-            HTTPResponseCode::NotFound => "404 Not Found",
+            HTTPResponseCode::OK => "200 OK".to_string(),
+            HTTPResponseCode::NotFound => "404 Not Found".to_string(),
         }
     }
 }
@@ -45,4 +46,15 @@ impl HTTPResponse {
             header_end.to_owned(),
         ]
     }
+}
+
+pub fn log_response(response: HTTPResponse) {
+    let HTTPResponse {
+        code, content_type, ..
+    }: HTTPResponse = response;
+    println!(
+        "[RESPONSE] {} content-type: {}",
+        code.to_string(),
+        content_type.to_string()
+    )
 }
