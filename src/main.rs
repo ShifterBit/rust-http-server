@@ -1,7 +1,7 @@
 mod config;
+mod mimetypes;
 mod request;
 mod response;
-mod mimetypes;
 
 use clap::Parser;
 
@@ -10,6 +10,7 @@ use config::{get_port, Config};
 use request::{handle_request, parse_request};
 
 use std::fs::File;
+use std::env;
 use std::io::Read;
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
@@ -58,13 +59,25 @@ fn start_server(port: u32, config: Config) {
         handle_connection(stream.unwrap(), config.to_owned())
     }
 }
+
+fn expand_tidle(path: &str) -> String {
+    match path.chars().next() {
+        Some('~') => {
+            let home_directory = env::var("HOME").unwrap();
+            let rest = path.split_at(1);
+            format!("{}{}", home_directory, rest.1)
+        }
+        _ => path.to_string(),
+    }
+}
 fn read_page_source(path: &str) -> Vec<u8> {
-    let mut f = File::open(path).unwrap();
+    let expanded_path = expand_tidle(path);
+    println!("Expanded File: {}", expanded_path);
+
+    let mut f = File::open(&expanded_path).unwrap();
     let mut buffer = Vec::new();
 
-
-
-    if Path::new(path).is_dir() {
+    if Path::new(&expanded_path).is_dir() {
         return read_page_source(&format!("{path}/index.html"));
     }
 
